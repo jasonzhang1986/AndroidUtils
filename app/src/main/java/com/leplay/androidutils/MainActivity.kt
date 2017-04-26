@@ -3,8 +3,8 @@ package com.leplay.androidutils
 import android.app.Activity
 import android.os.Bundle
 import android.view.View
-import com.leplay.androidutils.base.launchActivity
 import com.leplay.androidutils.test.TestNetworkActivity
+import launchActivity
 
 /**
  * Created by JifengZhang on 2017/4/24.
