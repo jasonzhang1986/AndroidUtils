@@ -17,7 +17,8 @@ import java.lang.annotation.RetentionPolicy;
  * </pre>
  */
 public final class LogUtils {
-
+    private static final int MAX_LOG_LENGTH = 4000;
+    private static final int MAX_TAG_LENGTH = 23;
     public static final int V = 0x01;
     public static final int D = 0x02;
     public static final int I = 0x04;
@@ -30,7 +31,7 @@ public final class LogUtils {
     public @interface TYPE {
     }
 
-    private static int sLogFilter = V;    // log过滤器
+    @TYPE private static int sLogFilter = V;    // log过滤器
     private static String sGlobalTag = Utils.getContext().getString(Utils.getContext().getApplicationInfo().labelRes);
     private static boolean sEnable = true;
 
@@ -67,7 +68,7 @@ public final class LogUtils {
     }
 
     public static void v(String tag, String message) {
-        print(V, tag, message);
+        log(V, tag, message);
     }
     public static void v(String message) {
         v(sGlobalTag, message);
@@ -87,7 +88,7 @@ public final class LogUtils {
 
 
     public static void d(String tag, String message) {
-        print(D, tag, message);
+        log(D, tag, message);
     }
     public static void d(String message) {
         d(sGlobalTag, message);
@@ -107,7 +108,7 @@ public final class LogUtils {
 
 
     public static void i(String tag, String message) {
-        print(I, tag, message);
+        log(I, tag, message);
     }
     public static void i(String message) {
         i(sGlobalTag, message);
@@ -126,7 +127,7 @@ public final class LogUtils {
     }
 
     public static void w(String tag, String message) {
-        print(W, tag, message);
+        log(W, tag, message);
     }
     public static void w(String message) {
         w(sGlobalTag, message);
@@ -145,7 +146,7 @@ public final class LogUtils {
     }
 
     public static void e(String tag, String message) {
-        print(E, tag, message);
+        log(E, tag, message);
     }
     public static void e(String message) {
         e(sGlobalTag, message);
@@ -164,7 +165,7 @@ public final class LogUtils {
     }
 
     public static void wtf(String tag, String message) {
-        print(WTF, tag, message);
+        log(WTF, tag, message);
     }
     public static void wtf(String message) {
         wtf(sGlobalTag, message);
@@ -182,6 +183,25 @@ public final class LogUtils {
         wtf(tag, getStackTraceString(t));
     }
 
+    private static void log(final int type, final String tag, String msg) {
+        String showTag = tag;
+        if (tag.length() > MAX_TAG_LENGTH) {
+            showTag = tag.substring(0, MAX_TAG_LENGTH);
+        }
+        if (msg.length() > MAX_LOG_LENGTH) {
+            // Split by line, then ensure each line can fit into Log's maximum length.
+            for (int i = 0, length = msg.length(); i < length; i++) {
+                int newline = msg.indexOf('\n', i);
+                newline = newline != -1 ? newline : length;
+                do {
+                    int end = Math.min(newline, i + MAX_LOG_LENGTH);
+                    String part = msg.substring(i, end);
+                    print(type, showTag, part);
+                    i = end;
+                } while (i < newline);
+            }
+        }
+    }
     private static void print(final int type, final String tag, String msg) {
         if (!sEnable || type<sLogFilter) {
             return;
