@@ -2,6 +2,7 @@ package com.leplay.android.utils;
 
 
 import android.support.annotation.IntDef;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.io.PrintWriter;
@@ -19,19 +20,13 @@ import java.lang.annotation.RetentionPolicy;
 public final class LogUtils {
     private static final int MAX_LOG_LENGTH = 4000;
     private static final int MAX_TAG_LENGTH = 23;
-    public static final int V = 0x01;
-    public static final int D = 0x02;
-    public static final int I = 0x04;
-    public static final int W = 0x08;
-    public static final int E = 0x10;
-    public static final int WTF = 0x20;
 
-    @IntDef({V, D, I, W, E, WTF})
+    @IntDef({Log.VERBOSE, Log.DEBUG, Log.INFO, Log.WARN, Log.ERROR, Log.ASSERT})
     @Retention(RetentionPolicy.SOURCE)
     public @interface TYPE {
     }
 
-    @TYPE private static int sLogFilter = V;    // log过滤器
+    @TYPE private static int sLogFilter = Log.VERBOSE;    // log过滤器
     private static String sGlobalTag = Utils.getContext().getString(Utils.getContext().getApplicationInfo().labelRes);
     private static boolean sEnable = true;
 
@@ -67,121 +62,91 @@ public final class LogUtils {
         return sw.toString();
     }
 
-    public static void v(String tag, String message) {
-        log(V, tag, message);
+    public static void v(@NonNull String message, Object... args) {
+        prepareLog(Log.VERBOSE, null, message, args);
     }
-    public static void v(String message) {
-        v(sGlobalTag, message);
+    public static void v(Throwable t, @NonNull String message, Object... args) {
+        prepareLog(Log.VERBOSE, t, message, args);
     }
-    public static void v(String message, Object... args) {
-        v(sGlobalTag, message, args);
+    public static void v(Throwable t) {
+        prepareLog(Log.VERBOSE, t, null);
     }
-    public static void v(String tag, String message, Object... args) {
-        if (args.length > 0) {
-            message = formatMessage(message, args);
+
+    public static void d(@NonNull String message, Object... args) {
+        prepareLog(Log.DEBUG, null, message, args);
+    }
+    public static void d(Throwable t, @NonNull String message, Object... args) {
+        prepareLog(Log.DEBUG, t, message, args);
+    }
+    public static void d(Throwable t) {
+        prepareLog(Log.DEBUG, t, null);
+    }
+
+    public static void i(@NonNull String message, Object... args) {
+        prepareLog(Log.INFO, null, message, args);
+    }
+    public static void i(Throwable t, @NonNull String message, Object... args) {
+        prepareLog(Log.INFO, t, message, args);
+    }
+    public static void i(Throwable t) {
+        prepareLog(Log.INFO, t, null);
+    }
+
+    public static void w(@NonNull String message, Object... args) {
+        prepareLog(Log.WARN, null, message, args);
+    }
+    public static void w(Throwable t, @NonNull String message, Object... args) {
+        prepareLog(Log.WARN, t, message, args);
+    }
+    public static void w(Throwable t) {
+        prepareLog(Log.WARN, t, null);
+    }
+
+    public static void e(@NonNull String message, Object... args) {
+        prepareLog(Log.ERROR, null, message, args);
+    }
+    public static void e(Throwable t, @NonNull String message, Object... args) {
+        prepareLog(Log.ERROR, t, message, args);
+    }
+    public static void e(Throwable t) {
+        prepareLog(Log.ERROR, t, null);
+    }
+
+    public static void wtf(@NonNull String message, Object... args) {
+        prepareLog(Log.ASSERT, null, message, args);
+    }
+    public static void wtf(Throwable t, @NonNull String message, Object... args) {
+        prepareLog(Log.ASSERT, t, message, args);
+    }
+    public static void wtf(Throwable t) {
+        prepareLog(Log.ASSERT, t, null);
+    }
+
+    private static void prepareLog(@TYPE int type, Throwable t, String message, Object... args) {
+        if (!sEnable || type<sLogFilter) {
+            return;
         }
-        v(tag, message);
-    }
-    public static void v(String tag, Throwable t) {
-        v(tag, getStackTraceString(t));
-    }
-
-
-    public static void d(String tag, String message) {
-        log(D, tag, message);
-    }
-    public static void d(String message) {
-        d(sGlobalTag, message);
-    }
-    public static void d(String message, Object... args) {
-        d(sGlobalTag, message, args);
-    }
-    public static void d(String tag, String message, Object... args) {
-        if (args.length > 0) {
-            message = formatMessage(message, args);
+        String tag = sGlobalTag;
+        if (message != null && message.length() ==0) {
+            message = null;
         }
-        d(tag, message);
-    }
-    public static void d(String tag, Throwable t) {
-        d(tag, getStackTraceString(t));
-    }
-
-
-    public static void i(String tag, String message) {
-        log(I, tag, message);
-    }
-    public static void i(String message) {
-        i(sGlobalTag, message);
-    }
-    public static void i(String message, Object... args) {
-        i(sGlobalTag, message, args);
-    }
-    public static void i(String tag, String message, Object... args) {
-        if (args.length > 0) {
-            message = formatMessage(message, args);
+        if (message == null) {
+            if (t == null) {
+                return;
+            }
+            message = getStackTraceString(t);
+        } else {
+            if (args.length>0) {
+                message = formatMessage(message, args);
+            }
+            if (t != null) {
+                message += "\n" + getStackTraceString(t);
+            }
         }
-        i(tag, message);
-    }
-    public static void i(String tag, Throwable t) {
-        i(tag, getStackTraceString(t));
+
+        log(type, tag, message);
     }
 
-    public static void w(String tag, String message) {
-        log(W, tag, message);
-    }
-    public static void w(String message) {
-        w(sGlobalTag, message);
-    }
-    public static void w(String message, Object... args) {
-        w(sGlobalTag, message, args);
-    }
-    public static void w(String tag, String message, Object... args) {
-        if (args.length > 0) {
-            message = formatMessage(message, args);
-        }
-        w(tag, message);
-    }
-    public static void w(String tag, Throwable t) {
-        w(tag, getStackTraceString(t));
-    }
-
-    public static void e(String tag, String message) {
-        log(E, tag, message);
-    }
-    public static void e(String message) {
-        e(sGlobalTag, message);
-    }
-    public static void e(String message, Object... args) {
-        e(sGlobalTag, message, args);
-    }
-    public static void e(String tag, String message, Object... args) {
-        if (args.length > 0) {
-            message = formatMessage(message, args);
-        }
-        e(tag, message);
-    }
-    public static void e(String tag, Throwable t) {
-        e(tag, getStackTraceString(t));
-    }
-
-    public static void wtf(String tag, String message) {
-        log(WTF, tag, message);
-    }
-    public static void wtf(String message) {
-        wtf(sGlobalTag, message);
-    }
-    public static void wtf(String message, Object... args) {
-        wtf(sGlobalTag, message, args);
-    }
-    public static void wtf(String tag, String message, Object... args) {
-        if (args.length > 0) {
-            message = formatMessage(message, args);
-        }
-        wtf(tag, message);
-    }
-    public static void wtf(String tag, Throwable t) {
-        wtf(tag, getStackTraceString(t));
-    }
 
     private static void log(final int type, final String tag, String msg) {
         String showTag = tag;
@@ -196,35 +161,20 @@ public final class LogUtils {
                 do {
                     int end = Math.min(newline, i + MAX_LOG_LENGTH);
                     String part = msg.substring(i, end);
-                    print(type, showTag, part);
+                    if (type==Log.ASSERT) {
+                        Log.wtf(tag, part);
+                    } else {
+                        Log.println(type, showTag, part);
+                    }
                     i = end;
                 } while (i < newline);
             }
-        }
-    }
-    private static void print(final int type, final String tag, String msg) {
-        if (!sEnable || type<sLogFilter) {
-            return;
-        }
-        switch (type) {
-            case V:
-                Log.v(tag, msg);
-                break;
-            case D:
-                Log.d(tag, msg);
-                break;
-            case I:
-                Log.i(tag, msg);
-                break;
-            case W:
-                Log.w(tag, msg);
-                break;
-            case E:
-                Log.e(tag, msg);
-                break;
-            case WTF:
-                Log.wtf(tag, msg);
-                break;
+        } else {
+            if (type==Log.ASSERT) {
+                Log.wtf(tag,msg);
+            } else {
+                Log.println(type, showTag, msg);
+            }
         }
     }
 }
